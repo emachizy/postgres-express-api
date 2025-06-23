@@ -1,98 +1,31 @@
+require("dotenv").config();
 const express = require("express");
-const pool = require("./db");
+const userRoutes = require("./routes/users");
+const errorHandler = require("./middlewares/errorHandler");
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 
 // Routes
-// GET all users
-app.get("/users", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM users");
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
+app.use("/users", userRoutes);
+
+// Central error handling
+app.use(errorHandler);
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Endpoint not found",
+    message: `The requested path ${req.path} does not exist`,
+  });
 });
 
-// GET single user
-app.get("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
-// CREATE user
-app.post("/users", async (req, res) => {
-  try {
-    const { name, email, age } = req.body;
-    const result = await pool.query(
-      "INSERT INTO users (name, email, age) VALUES ($1, $2, $3) RETURNING *",
-      [name, email, age]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
-// UPDATE user
-app.put("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email, age } = req.body;
-
-    const result = await pool.query(
-      "UPDATE users SET name = $1, email = $2, age = $3 WHERE id = $4 RETURNING *",
-      [name, email, age, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
-// DELETE user
-app.delete("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query(
-      "DELETE FROM users WHERE id = $1 RETURNING *",
-      [id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json({ message: "User deleted" });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
-// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(
+    `📊 PostgreSQL: ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`
+  );
 });
