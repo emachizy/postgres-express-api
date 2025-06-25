@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const userRoutes = require("./routes/users");
 const errorHandler = require("./middlewares/errorHandler");
-const db = require("./config/db"); // Make sure this exports a `pg.Pool` or client
+const db = require("./db"); // Make sure this exports a `pg.Pool` or client
 
 const app = express();
 const PORT = process.env.PORT || 3000;
