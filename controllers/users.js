@@ -1,88 +1,93 @@
 const db = require("../config/db");
 
-const getAllUsers = async (req, res) => {
+// GET /users
+const getAllUsers = async (req, res, next) => {
   try {
-    const result = await db.query("SELECT * FROM users");
-    res.json(result.rows);
+    const { rows } = await db.query("SELECT * FROM users");
+    res.json(rows);
   } catch (err) {
     console.error("Error fetching users:", err.message);
-    res.status(500).json({
-      error: "Database Error",
-      message: "Failed to retrieve user data",
-    });
+    next(err);
   }
 };
 
-const getUserById = async (req, res) => {
+// GET /users/:id
+const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await db.query("SELECT * FROM users WHERE id = $1", [id]);
+    const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [id]);
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({
         error: "Not Found",
         message: `User with ID ${id} does not exist`,
       });
     }
 
-    res.json(result.rows[0]);
+    res.json(rows[0]);
   } catch (err) {
     next(err);
   }
 };
 
-// Other CRUD operations with similar error handling...
-const createUser = async (req, res) => {
+// POST /users
+const createUser = async (req, res, next) => {
   try {
-    const { name, email } = req.body;
-    const result = await db.query(
-      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
-      [name, email]
+    const { name, email, age } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO users (name, email, age)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [name, email, age]
     );
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(rows[0]);
   } catch (err) {
     console.error("Error creating user:", err.message);
-    res
-      .status(500)
-      .json({ error: "Database Error", message: "Failed to create user" });
+    next(err);
   }
 };
 
-const updateUser = async (req, res) => {
+// PUT /users/:id
+const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email } = req.body;
-
-    const result = await db.query(
-      "UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *",
-      [name, email, id]
+    const { name, email, age } = req.body;
+    const { rows } = await db.query(
+      `UPDATE users
+       SET name  = $1,
+           email = $2,
+           age   = $3
+       WHERE id = $4
+       RETURNING *`,
+      [name, email, age, id]
     );
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({
         error: "Not Found",
         message: `User with ID ${id} does not exist`,
       });
     }
 
-    res.json(result.rows[0]);
+    res.json(rows[0]);
   } catch (err) {
     console.error("Error updating user:", err.message);
-    res
-      .status(500)
-      .json({ error: "Database Error", message: "Failed to update user" });
+    next(err);
   }
 };
 
-const deleteUser = async (req, res) => {
+// DELETE /users/:id
+const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await db.query(
-      "DELETE FROM users WHERE id = $1 RETURNING *",
+    const { rows } = await db.query(
+      `DELETE FROM users
+       WHERE id = $1
+       RETURNING *`,
       [id]
     );
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({
         error: "Not Found",
         message: `User with ID ${id} does not exist`,
@@ -92,9 +97,7 @@ const deleteUser = async (req, res) => {
     res.json({ message: `User with ID ${id} deleted successfully` });
   } catch (err) {
     console.error("Error deleting user:", err.message);
-    res
-      .status(500)
-      .json({ error: "Database Error", message: "Failed to delete user" });
+    next(err);
   }
 };
 

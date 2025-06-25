@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 const {
   getAllUsers,
   getUserById,
@@ -7,12 +8,22 @@ const {
   updateUser,
   deleteUser,
 } = require("../controllers/users");
-const { validateUser } = require("../middlewares/validation");
 
+const { validateUser, validateUserId } = require("../middlewares/validation");
+
+// List
 router.get("/", getAllUsers);
-router.get("/:id", getUserById);
+
+// Read
+router.get("/:id", validateUserId, getUserById);
+
+// Create
 router.post("/", validateUser, createUser);
-router.put("/:id", validateUser, updateUser);
-router.delete("/:id", deleteUser);
+
+// Update
+router.put("/:id", validateUserId, validateUser, updateUser);
+
+// Delete
+router.delete("/:id", validateUserId, deleteUser);
 
 module.exports = router;

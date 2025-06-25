@@ -1,28 +1,49 @@
-const validateUser = (req, res, next) => {
-  const { name, email } = req.body;
+const { body, param, validationResult } = require("express-validator");
 
-  if (!name || !email) {
-    return res.status(400).json({
-      error: "Validation failed",
-      message: "Name and email are required fields",
-    });
-  }
+const validateUser = [
+  body("name")
+    .trim()
+    .notEmpty()
+    .withMessage("Name is required")
+    .isLength({ max: 100 })
+    .withMessage("Name must be ≤ 100 chars"),
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Must be a valid email")
+    .isLength({ max: 100 })
+    .withMessage("Email must be ≤ 100 chars"),
+  body("age")
+    .optional()
+    .isInt({ min: 0, max: 120 })
+    .withMessage("Age must be an integer 0–120"),
+  (req, res, next) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(422).json({ errors: errs.array() });
+    }
+    next();
+  },
+];
 
-  if (req.method === "POST" && !name.trim()) {
-    return res.status(400).json({
-      error: "Validation failed",
-      message: "Name cannot be empty",
-    });
-  }
+const validateUserId = [
+  param("id")
+    .notEmpty()
+    .withMessage("ID param is required")
+    .isInt({ gt: 0 })
+    .withMessage("ID must be a positive integer"),
+  (req, res, next) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(400).json({ errors: errs.array() });
+    }
+    next();
+  },
+];
 
-  if (!/^\S+@\S+\.\S+$/.test(email)) {
-    return res.status(400).json({
-      error: "Validation failed",
-      message: "Invalid email format",
-    });
-  }
-
-  next();
+module.exports = {
+  validateUser,
+  validateUserId,
 };
-
-module.exports = { validateUser };
